@@ -14,10 +14,10 @@ use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
 use pocketmine\Server;
 use pocketmine\utils\Config;
-use jojoe77777\FormAPI\SimpleForm;
+use SaltyPixelDevz\CustomShopUIv2\libs\jojoe77777\FormAPI\SimpleForm;
 use pocketmine\utils\TextFormat as TF;
-use jojoe77777\FormAPI\CustomForm;
-use JackMD\ConfigUpdater\ConfigUpdater;
+use SaltyPixelDevz\CustomShopUIv2\libs\jojoe77777\FormAPI\CustomForm;
+use SaltyPixelDevz\CustomShopUIv2\libs\JackMD\ConfigUpdater\ConfigUpdater;
 
 //   _____       _ _         _____ _          _ _____
 //  / ____|     | | |       |  __ (_)        | |  __ \
@@ -97,7 +97,6 @@ class Shop extends PluginBase
                                 $ans = strtolower($args[0]);
                                 if (array_key_exists($ans, $cfg)) {
                                     $cfg = $cfg[$ans];
-                                    if ($sender->hasPermission("shop.$ans")) {
                                         if ($sender->getGamemode() != 0 and $this->getConfig()->get("Survival") === true) {
                                             $msg = new Config($this->getDataFolder() . "messages.yml", Config::YAML);
                                             $sender->sendMessage($msg->getNested("messages.Survival"));
@@ -108,10 +107,7 @@ class Shop extends PluginBase
                                             return true;
                                         }
                                         break;
-                                    } else if (!$sender->hasPermission("shop.$ans")) {
-                                        $msg = new Config($this->getDataFolder() . "messages.yml", Config::YAML);
-                                        $sender->sendMessage($msg->getNested("Messages.NoPermission"));
-                                    }
+                                    
                                 } else {
                                     $msg = new Config($this->getDataFolder() . "messages.yml", Config::YAML);
                                     $sender->sendMessage($msg->getNested("Messages.ShopError"));
@@ -226,15 +222,27 @@ class Shop extends PluginBase
                     } else {
                         $name = $list[5];
                     }
+					
+					if ($list[0] == "cmd"){
+						$msg2 = str_replace("{price}", "", $msg->getNested("Messages.Each"));
+						$msg2 = str_replace("{cost}", "$list[2]", $msg2);											
+					}
+					elseif ($list[2] > 1 ){
+						$msg2 = str_replace("{price}", "(x$list[2])", $msg->getNested("Messages.Each"));
+						$msg2 = str_replace("{cost}", "$list[3]", $msg2);
+					}
+					else{
+						$msg2 = str_replace("{price}", "", $msg->getNested("Messages.Each"));
+						$msg2 = str_replace("{cost}", "$list[3]", $msg2);							
+					}					
                     if ($list[0] == "cmd") {
-                        $msg2 = str_replace("{price}", "$list[2]", $msg->getNested("Messages.Each"));
+
                         if (substr($list[5], 0, 4) == "http") {
                             $form->addButton($list[1] . " " . $msg2, 1, $list[5] . ":" . $list[6]);
                         } else {
                             $form->addButton($list[1] . " " . $msg2, 0, $list[5]);
                         }
                     } else {
-                        $msg2 = str_replace("{price}", "$list[2]", $msg->getNested("Messages.Each"));
                         if (substr($list[6], 0, 4) == "http") {
                             $form->addButton($name . " " . $msg2, 1, $list[6] . ":" . $list[7]);
                         } else {
@@ -438,13 +446,13 @@ class Shop extends PluginBase
                         if ($money >= $list[3] * $data1) {
                             $item = $player->getInventory();
                             if ($list[5] != "Default") {
-                                $item->addItem(Item::get((int)$list[0], (int)$list[1], $data1)->setCustomName($list[5]));
+                                $item->addItem(Item::get((int)$list[0], (int)$list[1], $data1*$list[2])->setCustomName($list[5]));
                             } elseif ($list[5] == "Default") {
-                                $item->addItem(Item::get((int)$list[0], (int)$list[1], $data1));
+                                $item->addItem(Item::get((int)$list[0], (int)$list[1], $data1*$list[2]));
                             }
                             EconomyAPI::getInstance()->reduceMoney($player, $list[3] * $data1);
                             $message = $msg->getNested("Messages.Paid_for");
-                            $vars = ["{amount}" => $data1, "{item}" => $name, "{cost}" => $list[3] * $data1];
+                            $vars = ["{amount}" => $data1*$list[2], "{item}" => $name, "{cost}" => $list[3] * $data1];
                             foreach ($vars as $var => $replacement) {
                                 $message = str_replace($var, $replacement, $message);
                             }
